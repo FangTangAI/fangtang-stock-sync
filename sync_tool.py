@@ -292,6 +292,11 @@ def read_json_text(path: Path):
     raise ValueError(f"无法读取 JSON：{path}")
 
 
+def read_json_list(path: Path) -> list:
+    value = read_json_text(path)
+    return value if isinstance(value, list) else []
+
+
 def build_ths_self_stock_rows(path: Path, codes: list[str], markets: dict[str, str]) -> list[dict]:
     old_rows = []
     if path.exists():
@@ -324,6 +329,18 @@ class TonghuashunStore:
         self.stock_block_ini = self.account_dir / "StockBlock.ini"
 
     @staticmethod
+    def is_account_dir(path: Path) -> bool:
+        if (path / "custom_block").exists():
+            return True
+        self_stock = path / "SelfStockInfo.json"
+        if not self_stock.exists():
+            return False
+        try:
+            return isinstance(read_json_text(self_stock), list)
+        except Exception:
+            return False
+
+    @staticmethod
     def find_accounts(exe_path: str) -> list[Path]:
         p = Path(exe_path)
         if p.is_file() and p.name.lower() == "selfstockinfo.json":
@@ -344,7 +361,7 @@ class TonghuashunStore:
             except Exception:
                 pass
             for candidate in candidates:
-                if (candidate / "custom_block").exists() or (candidate / "SelfStockInfo.json").exists():
+                if TonghuashunStore.is_account_dir(candidate):
                     key = str(candidate.resolve())
                     if key not in seen:
                         seen.add(key)
@@ -382,7 +399,7 @@ class TonghuashunStore:
 
     def list_blocks(self) -> list[Block]:
         if self.root.is_file() and self.root.name.lower() == "selfstockinfo.json":
-            rows = read_json_text(self.root)
+            rows = read_json_list(self.root)
             codes = [normalize_code(x.get("C", "")) for x in rows if isinstance(x, dict)]
             markets = {normalize_code(x.get("C", "")): str(x.get("M", "")) for x in rows if isinstance(x, dict)}
             return [Block("SelfStockInfo", "同花顺自选股", self.root, unique_codes(codes), markets)]
@@ -391,7 +408,7 @@ class TonghuashunStore:
         self_stock = self.account_dir / "SelfStockInfo.json"
         if self_stock.exists():
             try:
-                rows = read_json_text(self_stock)
+                rows = read_json_list(self_stock)
                 codes = [normalize_code(x.get("C", "")) for x in rows if isinstance(x, dict)]
                 markets = {normalize_code(x.get("C", "")): str(x.get("M", "")) for x in rows if isinstance(x, dict)}
                 blocks.append(Block("SelfStockInfo", "同花顺自选股", self_stock, unique_codes(codes), markets))
@@ -937,8 +954,8 @@ class App:
         style.configure("Treeview.Heading", font=("Microsoft YaHei UI", 9, "bold"), background="#eaeef2", foreground="#24292f")
         top = ttk.Frame(self.root, padding=10)
         top.pack(fill=X)
-        self.path_row(top, "左侧来源", self.left_kind, self.left_path, self.choose_left, self.load_left)
-        self.path_row(top, "右侧来源", self.right_kind, self.right_path, self.choose_right, self.load_right)
+        self.path_row(top, "左侧来源", self.left_kind, self.left_path, self.choose_left, self.load_left, "left")
+        self.path_row(top, "右侧来源", self.right_kind, self.right_path, self.choose_right, self.load_right, "right")
         middle = ttk.Frame(self.root, padding=(8, 2, 8, 8))
         middle.pack(fill=BOTH, expand=True)
         self.left_box = self.block_panel(middle, "左侧板块", LEFT)
@@ -955,14 +972,42 @@ class App:
         self.status = StringVar(value="就绪")
         ttk.Label(bottom, textvariable=self.status).pack(side=LEFT)
 
-    def path_row(self, parent, label, kind_var, path_var, choose_cmd, load_cmd):
+    def path_row(self, parent, label, kind_var, path_var, choose_cmd, load_cmd, side):
         frame = ttk.Frame(parent)
         frame.pack(fill=X, pady=4)
         ttk.Label(frame, text=label, width=10).pack(side=LEFT)
-        ttk.Combobox(frame, textvariable=kind_var, values=SOFTWARES, state="readonly", width=10).pack(side=LEFT, padx=(0, 6))
+        combo = ttk.Combobox(frame, textvariable=kind_var, values=SOFTWARES, state="readonly", width=10)
+        combo.pack(side=LEFT, padx=(0, 6))
+        combo.bind("<<ComboboxSelected>>", lambda _event, s=side: self.source_changed(s))
         ttk.Entry(frame, textvariable=path_var, font=("Consolas", 9)).pack(side=LEFT, fill=X, expand=True, padx=6, ipady=4)
         ttk.Button(frame, text="选择", command=choose_cmd).pack(side=LEFT, padx=2)
         ttk.Button(frame, text="载入", command=load_cmd).pack(side=LEFT, padx=2)
+
+    def source_changed(self, side: str):
+        self.reset_side(side, clear_path=True)
+        clear_runtime_caches()
+        self.persist_state()
+        self.status.set("已切换来源，请重新选择路径并载入")
+
+    def reset_side(self, side: str, clear_path: bool = False):
+        if side == "left":
+            if clear_path:
+                self.left_path.set("")
+            self.left_store = None
+            self.left_blocks = []
+            self.left_selected = None
+            self.clear_box(self.left_box)
+        else:
+            if clear_path:
+                self.right_path.set("")
+            self.right_store = None
+            self.right_blocks = []
+            self.right_selected = None
+            self.clear_box(self.right_box)
+
+    def clear_box(self, box):
+        box["blocks"].delete(*box["blocks"].get_children())
+        box["stocks"].delete(*box["stocks"].get_children())
 
     def block_panel(self, parent, title, side):
         frame = ttk.LabelFrame(parent, text=title, padding=8)
@@ -997,11 +1042,15 @@ class App:
         path = filedialog.askopenfilename(title="选择左侧程序", filetypes=[("程序或数据文件", "*.exe *.json *.blk *.dat"), ("所有文件", "*.*")])
         if path:
             self.left_path.set(path)
+            self.reset_side("left")
+            self.status.set("左侧路径已选择，请点击载入")
 
     def choose_right(self):
         path = filedialog.askopenfilename(title="选择右侧程序", filetypes=[("程序或数据文件", "*.exe *.json *.blk *.dat"), ("所有文件", "*.*")])
         if path:
             self.right_path.set(path)
+            self.reset_side("right")
+            self.status.set("右侧路径已选择，请点击载入")
 
     def load_all(self):
         if self.left_path.get().strip():
@@ -1014,6 +1063,7 @@ class App:
     def load_left(self):
         store = self.create_store(self.left_kind.get(), self.left_path.get(), "left")
         if not store:
+            self.reset_side("left")
             return
         self.left_store = store
         self.left_blocks = self.left_store.list_blocks()
@@ -1024,6 +1074,7 @@ class App:
     def load_right(self):
         store = self.create_store(self.right_kind.get(), self.right_path.get(), "right")
         if not store:
+            self.reset_side("right")
             return
         self.right_store = store
         self.right_blocks = self.right_store.list_blocks()
