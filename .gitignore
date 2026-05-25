@@ -11,8 +11,6 @@ custom_block/
 SelfStockInfo.json
 StockBlock.ini
 
-# Keep only the final packaged executable in dist.
+# Keep only the final one-file executable in dist.
 dist/*
-!dist/方塘自选股同步工具/
-dist/方塘自选股同步工具/*
-!dist/方塘自选股同步工具/方塘自选股同步工具.exe
+!dist/方塘自选股同步工具.exe
