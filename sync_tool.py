@@ -16,13 +16,17 @@ import customtkinter as ctk
 
 APP_TITLE = "方塘自选股同步工具"
 APP_AUTHOR = "作者：方塘    公众号：问道半亩方塘    邮箱：fangtangchn@163.com"
+COLOR_PRIMARY = "#1677ff"
+COLOR_PRIMARY_HOVER = "#0f5fd1"
+COLOR_SELECT = "#dbeafe"
+COLOR_SELECT_TEXT = "#0f172a"
 FONT_FAMILY = "Microsoft YaHei UI"
 FONT_TITLE = (FONT_FAMILY, 20, "bold")
 FONT_SECTION = (FONT_FAMILY, 13, "bold")
 FONT_NORMAL = (FONT_FAMILY, 12)
 FONT_SMALL = (FONT_FAMILY, 10)
-FONT_TABLE = (FONT_FAMILY, 16)
-FONT_TABLE_HEAD = (FONT_FAMILY, 16, "bold")
+FONT_TABLE = (FONT_FAMILY, 17)
+FONT_TABLE_HEAD = (FONT_FAMILY, 17, "bold")
 FONT_MONO = ("Consolas", 12)
 DEFAULT_WH_DIR = Path(r"C:\Users\pengy\Desktop\wh7个性化设置\PageBak\Page\SelfMess")
 DEFAULT_WH_INSTALL_DIR = Path(r"C:\Software\wh6模拟版")
@@ -950,18 +954,18 @@ class App:
 
     def build(self):
         ctk.set_appearance_mode("light")
-        ctk.set_default_color_theme("green")
+        ctk.set_default_color_theme("blue")
         self.root.tk.call("tk", "scaling", 1.35)
         self.root.configure(fg_color="#f6f8fa")
-        self.table_font = font.Font(family=FONT_FAMILY, size=16)
-        self.table_head_font = font.Font(family=FONT_FAMILY, size=16, weight="bold")
+        self.table_font = font.Font(family=FONT_TABLE[0], size=FONT_TABLE[1])
+        self.table_head_font = font.Font(family=FONT_TABLE_HEAD[0], size=FONT_TABLE_HEAD[1], weight="bold")
         style = ttk.Style()
         try:
             style.theme_use("clam")
         except Exception:
             pass
-        style.configure("Stock.Treeview", rowheight=42, font=self.table_font, fieldbackground="#ffffff", background="#ffffff", foreground="#24292f", bordercolor="#d0d7de")
-        style.map("Stock.Treeview", background=[("selected", "#d1fae5")], foreground=[("selected", "#064e3b")])
+        style.configure("Stock.Treeview", rowheight=46, font=self.table_font, fieldbackground="#ffffff", background="#ffffff", foreground="#24292f", bordercolor="#d0d7de")
+        style.map("Stock.Treeview", background=[("selected", COLOR_SELECT)], foreground=[("selected", COLOR_SELECT_TEXT)])
         style.configure("Stock.Treeview.Heading", font=self.table_head_font, background="#f3f4f6", foreground="#24292f")
         shell = ctk.CTkFrame(self.root, fg_color="#f6f8fa", corner_radius=0)
         shell.pack(fill=BOTH, expand=True, padx=14, pady=14)
@@ -980,8 +984,8 @@ class App:
         ctk.CTkLabel(center, text="同步方式", font=FONT_SECTION, text_color="#111827").pack(anchor="w", padx=16, pady=(16, 6))
         ctk.CTkRadioButton(center, text="补充式同步", font=FONT_NORMAL, variable=self.mode, value="append").pack(anchor="w", padx=16, pady=6)
         ctk.CTkRadioButton(center, text="覆盖式同步", font=FONT_NORMAL, variable=self.mode, value="replace").pack(anchor="w", padx=16, pady=6)
-        ctk.CTkButton(center, text="向右同步", font=FONT_NORMAL, height=36, command=lambda: self.sync("left")).pack(fill=X, padx=14, pady=(22, 8))
-        ctk.CTkButton(center, text="向左同步", font=FONT_NORMAL, height=36, command=lambda: self.sync("right")).pack(fill=X, padx=14, pady=6)
+        ctk.CTkButton(center, text="向右同步", font=FONT_NORMAL, height=36, fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER, command=lambda: self.sync("left")).pack(fill=X, padx=14, pady=(22, 8))
+        ctk.CTkButton(center, text="向左同步", font=FONT_NORMAL, height=36, fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER, command=lambda: self.sync("right")).pack(fill=X, padx=14, pady=6)
         ctk.CTkButton(center, text="刷新", font=FONT_NORMAL, height=34, fg_color="#ffffff", text_color="#24292f", border_width=1, border_color="#d0d7de", hover_color="#f3f4f6", command=self.load_all).pack(fill=X, padx=14, pady=(26, 12))
         self.right_box = self.block_panel(middle, "右侧板块", LEFT)
         bottom = ctk.CTkFrame(shell, fg_color="#ffffff", corner_radius=10, border_width=1, border_color="#d0d7de")
@@ -998,7 +1002,7 @@ class App:
         combo.pack(side=LEFT, padx=(0, 6))
         ctk.CTkEntry(frame, textvariable=path_var, font=FONT_MONO, height=32).pack(side=LEFT, fill=X, expand=True, padx=6)
         ctk.CTkButton(frame, text="选择", font=FONT_NORMAL, width=66, height=32, fg_color="#ffffff", text_color="#24292f", border_width=1, border_color="#d0d7de", hover_color="#f3f4f6", command=choose_cmd).pack(side=LEFT, padx=3)
-        ctk.CTkButton(frame, text="载入", font=FONT_NORMAL, width=66, height=32, command=load_cmd).pack(side=LEFT, padx=3)
+        ctk.CTkButton(frame, text="载入", font=FONT_NORMAL, width=66, height=32, fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER, command=load_cmd).pack(side=LEFT, padx=3)
 
     def source_changed(self, side: str):
         self.reset_side(side, clear_path=True)
@@ -1161,8 +1165,10 @@ class App:
         dialog.configure(bg="#f6f8fa")
         dialog.transient(self.root)
         dialog.grab_set()
-        ttk.Label(dialog, text="检测到多个同花顺账号，请选择要同步的账号：").pack(fill=X, padx=14, pady=(14, 8))
-        box = Listbox(dialog, height=min(8, len(accounts)), bg="#ffffff", fg="#24292f", selectbackground="#d1fae5", selectforeground="#064e3b", font=("Microsoft YaHei UI", 10))
+        dialog.resizable(False, False)
+        ctk.CTkLabel(dialog, text="检测到多个同花顺账号", font=FONT_SECTION, text_color="#111827").pack(fill=X, padx=18, pady=(18, 4))
+        ctk.CTkLabel(dialog, text="请选择要同步的账号", font=FONT_NORMAL, text_color="#57606a").pack(fill=X, padx=18, pady=(0, 10))
+        box = Listbox(dialog, height=min(8, len(accounts)), bg="#ffffff", fg="#24292f", selectbackground=COLOR_SELECT, selectforeground=COLOR_SELECT_TEXT, font=FONT_NORMAL, activestyle="none", relief="solid", bd=1, highlightthickness=0)
         box.pack(fill=BOTH, expand=True, padx=14, pady=6)
         for account in accounts:
             box.insert(END, account.name or str(account))
@@ -1172,11 +1178,22 @@ class App:
             if sel:
                 chosen["path"] = accounts[sel[0]]
             dialog.destroy()
-        ttk.Button(dialog, text="确定", style="Accent.TButton", command=ok).pack(padx=14, pady=(8, 14))
+        ctk.CTkButton(dialog, text="确定", font=FONT_NORMAL, height=34, fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER, command=ok).pack(fill=X, padx=14, pady=(8, 14))
         if accounts:
             box.selection_set(0)
+        self.center_dialog(dialog, width=360, height=260)
         dialog.wait_window()
         return chosen["path"]
+
+    def center_dialog(self, dialog, width: int, height: int):
+        self.root.update_idletasks()
+        root_x = self.root.winfo_rootx()
+        root_y = self.root.winfo_rooty()
+        root_w = max(self.root.winfo_width(), 1)
+        root_h = max(self.root.winfo_height(), 1)
+        x = root_x + (root_w - width) // 2
+        y = root_y + (root_h - height) // 2
+        dialog.geometry(f"{width}x{height}+{max(x, 0)}+{max(y, 0)}")
 
     def persist_state(self):
         save_state({
