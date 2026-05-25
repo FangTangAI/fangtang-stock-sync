@@ -292,6 +292,31 @@ def read_json_text(path: Path):
     raise ValueError(f"无法读取 JSON：{path}")
 
 
+def build_ths_self_stock_rows(path: Path, codes: list[str], markets: dict[str, str]) -> list[dict]:
+    old_rows = []
+    if path.exists():
+        try:
+            old_rows = read_json_text(path)
+        except Exception:
+            old_rows = []
+    old_by_code = {}
+    if isinstance(old_rows, list):
+        for row in old_rows:
+            if isinstance(row, dict):
+                code = normalize_code(row.get("C", ""))
+                if code:
+                    old_by_code[code] = row
+    rows = []
+    for code in unique_codes(codes):
+        old = dict(old_by_code.get(code, {}))
+        old["C"] = code
+        old["M"] = str(markets.get(code) or old.get("M") or guess_market(code))
+        old.setdefault("P", "0")
+        old["T"] = today()
+        rows.append(old)
+    return rows
+
+
 class TonghuashunStore:
     def __init__(self, root: Path):
         self.root = root
@@ -424,7 +449,7 @@ class TonghuashunStore:
             codes = unique_codes(codes)
         if block.path.name.lower() == "selfstockinfo.json":
             backup_file(block.path)
-            rows = [{"C": c, "M": markets.get(c, guess_market(c)), "P": "0", "T": today()} for c in codes]
+            rows = build_ths_self_stock_rows(block.path, codes, markets)
             block.path.write_text(json.dumps(rows, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
             return
         if not block.path.exists():
