@@ -1,12 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path('vendor').resolve()))
+from PyInstaller.utils.hooks import collect_data_files
+
 
 a = Analysis(
     ['sync_tool.py'],
-    pathex=[],
+    pathex=['vendor'],
     binaries=[],
-    datas=[],
-    hiddenimports=[],
+    datas=collect_data_files('customtkinter'),
+    hiddenimports=['customtkinter', 'darkdetect', 'packaging'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

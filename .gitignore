@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 build/
+vendor/
 *.log
 *.tmp
 *_sync_backup/

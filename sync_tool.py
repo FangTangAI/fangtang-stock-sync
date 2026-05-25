@@ -1,13 +1,21 @@
 import base64
 import json
 import shutil
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from tkinter import BOTH, END, LEFT, RIGHT, X, StringVar, Tk, Toplevel, Listbox, filedialog, messagebox, ttk
+from tkinter import BOTH, END, LEFT, RIGHT, X, StringVar, Toplevel, Listbox, filedialog, messagebox, ttk
+
+VENDOR_DIR = Path(__file__).resolve().parent / "vendor"
+if VENDOR_DIR.exists():
+    sys.path.insert(0, str(VENDOR_DIR))
+
+import customtkinter as ctk
 
 
 APP_TITLE = "方塘自选股同步工具"
+APP_AUTHOR = "作者：方塘    公众号：问道半亩方塘    邮箱：fangtangchn@163.com"
 DEFAULT_WH_DIR = Path(r"C:\Users\pengy\Desktop\wh7个性化设置\PageBak\Page\SelfMess")
 DEFAULT_WH_INSTALL_DIR = Path(r"C:\Software\wh6模拟版")
 DEFAULT_THS_INSTALL_DIR = Path(r"C:\software\同花顺")
@@ -912,7 +920,7 @@ def backup_file(path: Path) -> None:
 
 
 class App:
-    def __init__(self, root: Tk):
+    def __init__(self, root):
         self.root = root
         root.title(APP_TITLE)
         root.geometry("1320x780")
@@ -933,55 +941,54 @@ class App:
         self.status.set("请选择左右两侧程序后载入")
 
     def build(self):
-        self.root.configure(bg="#f6f8fa")
+        ctk.set_appearance_mode("light")
+        ctk.set_default_color_theme("green")
+        self.root.configure(fg_color="#f6f8fa")
         style = ttk.Style()
         try:
             style.theme_use("clam")
         except Exception:
             pass
-        style.configure("TFrame", background="#f6f8fa")
-        style.configure("TLabelframe", background="#f6f8fa", bordercolor="#d0d7de", relief="solid")
-        style.configure("TLabelframe.Label", background="#f6f8fa", foreground="#24292f", font=("Microsoft YaHei UI", 10, "bold"))
-        style.configure("TLabel", background="#f6f8fa", foreground="#57606a", font=("Microsoft YaHei UI", 9))
-        style.configure("TButton", font=("Microsoft YaHei UI", 9), padding=(10, 6), background="#ffffff", foreground="#24292f", bordercolor="#d0d7de")
-        style.map("TButton", background=[("active", "#f3f4f6"), ("pressed", "#eaeef2")])
-        style.configure("Accent.TButton", font=("Microsoft YaHei UI", 10, "bold"), padding=(12, 9), foreground="#ffffff", background="#10a37f", bordercolor="#10a37f")
-        style.map("Accent.TButton", background=[("active", "#0e8f70"), ("pressed", "#0b6f58")])
-        style.configure("TCombobox", fieldbackground="#ffffff", background="#ffffff", foreground="#24292f", arrowcolor="#57606a")
-        style.configure("TRadiobutton", background="#f6f8fa", foreground="#24292f", font=("Microsoft YaHei UI", 9))
         style.configure("Treeview", rowheight=28, font=("Microsoft YaHei UI", 9), fieldbackground="#ffffff", background="#ffffff", foreground="#24292f", bordercolor="#d0d7de")
         style.map("Treeview", background=[("selected", "#d1fae5")], foreground=[("selected", "#064e3b")])
         style.configure("Treeview.Heading", font=("Microsoft YaHei UI", 9, "bold"), background="#eaeef2", foreground="#24292f")
-        top = ttk.Frame(self.root, padding=10)
-        top.pack(fill=X)
+        shell = ctk.CTkFrame(self.root, fg_color="#f6f8fa", corner_radius=0)
+        shell.pack(fill=BOTH, expand=True, padx=14, pady=14)
+        header = ctk.CTkFrame(shell, fg_color="transparent")
+        header.pack(fill=X, pady=(0, 10))
+        ctk.CTkLabel(header, text=APP_TITLE, font=("Microsoft YaHei UI", 22, "bold"), text_color="#111827").pack(side=LEFT)
+        ctk.CTkLabel(header, text=APP_AUTHOR, font=("Microsoft YaHei UI", 12), text_color="#57606a").pack(side=RIGHT)
+        top = ctk.CTkFrame(shell, fg_color="#ffffff", corner_radius=10, border_width=1, border_color="#d0d7de")
+        top.pack(fill=X, pady=(0, 10), ipady=8)
         self.path_row(top, "左侧来源", self.left_kind, self.left_path, self.choose_left, self.load_left, "left")
         self.path_row(top, "右侧来源", self.right_kind, self.right_path, self.choose_right, self.load_right, "right")
-        middle = ttk.Frame(self.root, padding=(8, 2, 8, 8))
+        middle = ctk.CTkFrame(shell, fg_color="transparent")
         middle.pack(fill=BOTH, expand=True)
         self.left_box = self.block_panel(middle, "左侧板块", LEFT)
-        center = ttk.Frame(middle, padding=12)
+        center = ctk.CTkFrame(middle, fg_color="#ffffff", corner_radius=10, border_width=1, border_color="#d0d7de")
         center.pack(side=LEFT, fill="y")
-        ttk.Radiobutton(center, text="补充式同步", variable=self.mode, value="append").pack(anchor="w", pady=5)
-        ttk.Radiobutton(center, text="覆盖式同步", variable=self.mode, value="replace").pack(anchor="w", pady=5)
-        ttk.Button(center, text="向右同步", style="Accent.TButton", command=lambda: self.sync("left")).pack(fill=X, pady=(18, 8))
-        ttk.Button(center, text="向左同步", style="Accent.TButton", command=lambda: self.sync("right")).pack(fill=X, pady=5)
-        ttk.Button(center, text="刷新", command=self.load_all).pack(fill=X, pady=30)
+        ctk.CTkLabel(center, text="同步方式", font=("Microsoft YaHei UI", 13, "bold"), text_color="#111827").pack(anchor="w", padx=16, pady=(16, 6))
+        ctk.CTkRadioButton(center, text="补充式同步", variable=self.mode, value="append").pack(anchor="w", padx=16, pady=6)
+        ctk.CTkRadioButton(center, text="覆盖式同步", variable=self.mode, value="replace").pack(anchor="w", padx=16, pady=6)
+        ctk.CTkButton(center, text="向右同步", height=38, command=lambda: self.sync("left")).pack(fill=X, padx=14, pady=(22, 8))
+        ctk.CTkButton(center, text="向左同步", height=38, command=lambda: self.sync("right")).pack(fill=X, padx=14, pady=6)
+        ctk.CTkButton(center, text="刷新", height=34, fg_color="#ffffff", text_color="#24292f", border_width=1, border_color="#d0d7de", hover_color="#f3f4f6", command=self.load_all).pack(fill=X, padx=14, pady=(26, 12))
         self.right_box = self.block_panel(middle, "右侧板块", LEFT)
-        bottom = ttk.Frame(self.root, padding=8)
+        bottom = ctk.CTkFrame(shell, fg_color="#ffffff", corner_radius=10, border_width=1, border_color="#d0d7de")
         bottom.pack(fill=X)
         self.status = StringVar(value="就绪")
-        ttk.Label(bottom, textvariable=self.status).pack(side=LEFT)
+        ctk.CTkLabel(bottom, textvariable=self.status, text_color="#57606a", anchor="w").pack(side=LEFT, padx=12, pady=8)
+        ctk.CTkLabel(bottom, text=APP_AUTHOR, text_color="#6b7280", font=("Microsoft YaHei UI", 11)).pack(side=RIGHT, padx=12, pady=8)
 
     def path_row(self, parent, label, kind_var, path_var, choose_cmd, load_cmd, side):
-        frame = ttk.Frame(parent)
-        frame.pack(fill=X, pady=4)
-        ttk.Label(frame, text=label, width=10).pack(side=LEFT)
-        combo = ttk.Combobox(frame, textvariable=kind_var, values=SOFTWARES, state="readonly", width=10)
+        frame = ctk.CTkFrame(parent, fg_color="transparent")
+        frame.pack(fill=X, pady=6, padx=10)
+        ctk.CTkLabel(frame, text=label, width=78, text_color="#374151", anchor="w").pack(side=LEFT)
+        combo = ctk.CTkComboBox(frame, variable=kind_var, values=list(SOFTWARES), state="readonly", width=112, command=lambda _value, s=side: self.source_changed(s))
         combo.pack(side=LEFT, padx=(0, 6))
-        combo.bind("<<ComboboxSelected>>", lambda _event, s=side: self.source_changed(s))
-        ttk.Entry(frame, textvariable=path_var, font=("Consolas", 9)).pack(side=LEFT, fill=X, expand=True, padx=6, ipady=4)
-        ttk.Button(frame, text="选择", command=choose_cmd).pack(side=LEFT, padx=2)
-        ttk.Button(frame, text="载入", command=load_cmd).pack(side=LEFT, padx=2)
+        ctk.CTkEntry(frame, textvariable=path_var, font=("Consolas", 12), height=32).pack(side=LEFT, fill=X, expand=True, padx=6)
+        ctk.CTkButton(frame, text="选择", width=66, height=32, fg_color="#ffffff", text_color="#24292f", border_width=1, border_color="#d0d7de", hover_color="#f3f4f6", command=choose_cmd).pack(side=LEFT, padx=3)
+        ctk.CTkButton(frame, text="载入", width=66, height=32, command=load_cmd).pack(side=LEFT, padx=3)
 
     def source_changed(self, side: str):
         self.reset_side(side, clear_path=True)
@@ -1010,10 +1017,11 @@ class App:
         box["stocks"].delete(*box["stocks"].get_children())
 
     def block_panel(self, parent, title, side):
-        frame = ttk.LabelFrame(parent, text=title, padding=8)
-        frame.pack(side=side, fill=BOTH, expand=True, padx=5)
-        block_wrap = ttk.Frame(frame)
-        block_wrap.pack(fill=X)
+        frame = ctk.CTkFrame(parent, fg_color="#ffffff", corner_radius=10, border_width=1, border_color="#d0d7de")
+        frame.pack(side=side, fill=BOTH, expand=True, padx=6)
+        ctk.CTkLabel(frame, text=title, font=("Microsoft YaHei UI", 14, "bold"), text_color="#111827").pack(anchor="w", padx=12, pady=(10, 6))
+        block_wrap = ctk.CTkFrame(frame, fg_color="#ffffff")
+        block_wrap.pack(fill=X, padx=10)
         blocks = ttk.Treeview(block_wrap, columns=("name", "count"), show="headings", height=7)
         block_y = ttk.Scrollbar(block_wrap, orient="vertical", command=blocks.yview)
         blocks.configure(yscrollcommand=block_y.set)
@@ -1023,8 +1031,8 @@ class App:
         blocks.column("count", width=70, anchor="center")
         blocks.pack(side=LEFT, fill=X, expand=True)
         block_y.pack(side=RIGHT, fill="y")
-        stock_wrap = ttk.Frame(frame)
-        stock_wrap.pack(fill=BOTH, expand=True, pady=(8, 0))
+        stock_wrap = ctk.CTkFrame(frame, fg_color="#ffffff")
+        stock_wrap.pack(fill=BOTH, expand=True, padx=10, pady=(8, 10))
         stocks = ttk.Treeview(stock_wrap, columns=("sel", "idx", "market", "code", "name"), show="headings")
         stock_y = ttk.Scrollbar(stock_wrap, orient="vertical", command=stocks.yview)
         stock_x = ttk.Scrollbar(stock_wrap, orient="horizontal", command=stocks.xview)
@@ -1238,6 +1246,6 @@ class App:
 
 
 if __name__ == "__main__":
-    root = Tk()
+    root = ctk.CTk()
     App(root)
     root.mainloop()
