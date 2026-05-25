@@ -5,7 +5,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from tkinter import BOTH, END, LEFT, RIGHT, X, StringVar, Toplevel, Listbox, filedialog, messagebox, ttk
+from tkinter import BOTH, END, LEFT, RIGHT, X, StringVar, Toplevel, Listbox, filedialog, font, messagebox, ttk
 
 VENDOR_DIR = Path(__file__).resolve().parent / "vendor"
 if VENDOR_DIR.exists():
@@ -21,8 +21,8 @@ FONT_TITLE = (FONT_FAMILY, 20, "bold")
 FONT_SECTION = (FONT_FAMILY, 13, "bold")
 FONT_NORMAL = (FONT_FAMILY, 12)
 FONT_SMALL = (FONT_FAMILY, 10)
-FONT_TABLE = (FONT_FAMILY, 12)
-FONT_TABLE_HEAD = (FONT_FAMILY, 12, "bold")
+FONT_TABLE = (FONT_FAMILY, 16)
+FONT_TABLE_HEAD = (FONT_FAMILY, 16, "bold")
 FONT_MONO = ("Consolas", 12)
 DEFAULT_WH_DIR = Path(r"C:\Users\pengy\Desktop\wh7个性化设置\PageBak\Page\SelfMess")
 DEFAULT_WH_INSTALL_DIR = Path(r"C:\Software\wh6模拟版")
@@ -951,15 +951,18 @@ class App:
     def build(self):
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("green")
+        self.root.tk.call("tk", "scaling", 1.35)
         self.root.configure(fg_color="#f6f8fa")
+        self.table_font = font.Font(family=FONT_FAMILY, size=16)
+        self.table_head_font = font.Font(family=FONT_FAMILY, size=16, weight="bold")
         style = ttk.Style()
         try:
             style.theme_use("clam")
         except Exception:
             pass
-        style.configure("Treeview", rowheight=34, font=FONT_TABLE, fieldbackground="#ffffff", background="#ffffff", foreground="#24292f", bordercolor="#d0d7de")
-        style.map("Treeview", background=[("selected", "#d1fae5")], foreground=[("selected", "#064e3b")])
-        style.configure("Treeview.Heading", font=FONT_TABLE_HEAD, background="#f3f4f6", foreground="#24292f")
+        style.configure("Stock.Treeview", rowheight=42, font=self.table_font, fieldbackground="#ffffff", background="#ffffff", foreground="#24292f", bordercolor="#d0d7de")
+        style.map("Stock.Treeview", background=[("selected", "#d1fae5")], foreground=[("selected", "#064e3b")])
+        style.configure("Stock.Treeview.Heading", font=self.table_head_font, background="#f3f4f6", foreground="#24292f")
         shell = ctk.CTkFrame(self.root, fg_color="#f6f8fa", corner_radius=0)
         shell.pack(fill=BOTH, expand=True, padx=14, pady=14)
         header = ctk.CTkFrame(shell, fg_color="transparent")
@@ -1029,7 +1032,7 @@ class App:
         ctk.CTkLabel(frame, text=title, font=FONT_SECTION, text_color="#111827").pack(anchor="w", padx=12, pady=(10, 6))
         block_wrap = ctk.CTkFrame(frame, fg_color="#ffffff")
         block_wrap.pack(fill=X, padx=10)
-        blocks = ttk.Treeview(block_wrap, columns=("name", "count"), show="headings", height=7)
+        blocks = ttk.Treeview(block_wrap, columns=("name", "count"), show="headings", height=5, style="Stock.Treeview")
         block_y = ttk.Scrollbar(block_wrap, orient="vertical", command=blocks.yview)
         blocks.configure(yscrollcommand=block_y.set)
         blocks.heading("name", text="自定义板块")
@@ -1040,7 +1043,7 @@ class App:
         block_y.pack(side=RIGHT, fill="y")
         stock_wrap = ctk.CTkFrame(frame, fg_color="#ffffff")
         stock_wrap.pack(fill=BOTH, expand=True, padx=10, pady=(8, 10))
-        stocks = ttk.Treeview(stock_wrap, columns=("sel", "idx", "market", "code", "name"), show="headings")
+        stocks = ttk.Treeview(stock_wrap, columns=("sel", "idx", "market", "code", "name"), show="headings", style="Stock.Treeview")
         stock_y = ttk.Scrollbar(stock_wrap, orient="vertical", command=stocks.yview)
         stock_x = ttk.Scrollbar(stock_wrap, orient="horizontal", command=stocks.xview)
         stocks.configure(yscrollcommand=stock_y.set, xscrollcommand=stock_x.set)
