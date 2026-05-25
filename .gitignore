@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+build/
+*.log
+*.tmp
+*_sync_backup/
+
+# Local samples and reverse-engineering inputs
+custom_block/
+自选股同步工具/
+SelfStockInfo.json
+StockBlock.ini
+
+# Keep only the final packaged executable in dist.
+dist/*
+!dist/方塘自选股同步工具/
+dist/方塘自选股同步工具/*
+!dist/方塘自选股同步工具/方塘自选股同步工具.exe
