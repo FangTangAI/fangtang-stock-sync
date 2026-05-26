@@ -1113,7 +1113,7 @@ class App:
             messagebox.showwarning("路径不匹配", error)
             return None
         if not path:
-            messagebox.showwarning("未找到", f"没有找到 {kind} 的自选股数据，请重新选择安装目录里的执行程序。")
+            self.status.set("已取消选择账号" if kind == "同花顺" else f"没有找到 {kind} 的自选股数据")
             return None
         if kind == "同花顺":
             return TonghuashunStore(path)
@@ -1167,7 +1167,7 @@ class App:
         dialog.grab_set()
         dialog.resizable(False, False)
         ctk.CTkLabel(dialog, text="检测到多个同花顺账号", font=FONT_SECTION, text_color="#111827").pack(fill=X, padx=18, pady=(18, 4))
-        ctk.CTkLabel(dialog, text="请选择要同步的账号", font=FONT_NORMAL, text_color="#57606a").pack(fill=X, padx=18, pady=(0, 10))
+        ctk.CTkLabel(dialog, text="单击选择，双击或点确定确认", font=FONT_NORMAL, text_color="#57606a").pack(fill=X, padx=18, pady=(0, 10))
         box = Listbox(dialog, height=min(8, len(accounts)), bg="#ffffff", fg="#24292f", selectbackground=COLOR_SELECT, selectforeground=COLOR_SELECT_TEXT, font=FONT_NORMAL, activestyle="none", relief="solid", bd=1, highlightthickness=0)
         box.pack(fill=BOTH, expand=True, padx=14, pady=6)
         for account in accounts:
@@ -1178,9 +1178,19 @@ class App:
             if sel:
                 chosen["path"] = accounts[sel[0]]
             dialog.destroy()
-        ctk.CTkButton(dialog, text="确定", font=FONT_NORMAL, height=34, fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER, command=ok).pack(fill=X, padx=14, pady=(8, 14))
+        def cancel():
+            chosen["path"] = None
+            dialog.destroy()
+        box.bind("<Double-Button-1>", lambda _event: ok())
+        box.bind("<Return>", lambda _event: ok())
+        button_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        button_row.pack(fill=X, padx=14, pady=(8, 14))
+        ctk.CTkButton(button_row, text="取消", font=FONT_NORMAL, height=34, fg_color="#ffffff", text_color="#24292f", border_width=1, border_color="#d0d7de", hover_color="#f3f4f6", command=cancel).pack(side=LEFT, fill=X, expand=True, padx=(0, 6))
+        ctk.CTkButton(button_row, text="确定", font=FONT_NORMAL, height=34, fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER, command=ok).pack(side=LEFT, fill=X, expand=True, padx=(6, 0))
         if accounts:
             box.selection_set(0)
+            box.focus_set()
+        dialog.protocol("WM_DELETE_WINDOW", cancel)
         self.center_dialog(dialog, width=360, height=260)
         dialog.wait_window()
         return chosen["path"]
