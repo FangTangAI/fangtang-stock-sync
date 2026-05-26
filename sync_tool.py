@@ -136,7 +136,7 @@ def saved_user_path(value: str) -> str:
     if not value:
         return ""
     name = Path(value).name.lower()
-    if name in {"custom_block", "selfmess", "blocknew"}:
+    if name in {"selfmess", "blocknew"}:
         return ""
     if value in {str(DEFAULT_THS_INSTALL_DIR), str(DEFAULT_WH_INSTALL_DIR), str(DEFAULT_TDX_INSTALL_DIR)}:
         return ""
@@ -351,8 +351,6 @@ class TonghuashunStore:
 
     @staticmethod
     def is_account_dir(path: Path) -> bool:
-        if (path / "custom_block").exists():
-            return True
         self_stock = path / "SelfStockInfo.json"
         if not self_stock.exists():
             return False
@@ -1133,6 +1131,11 @@ class App:
         if not path:
             self.status.set("已取消选择账号" if kind == "同花顺" else f"没有找到 {kind} 的自选股数据")
             return None
+        if kind == "同花顺":
+            if side == "left":
+                self.left_path.set(str(path))
+            else:
+                self.right_path.set(str(path))
         if kind == "同花顺":
             return TonghuashunStore(path)
         if kind == "文华财经":
