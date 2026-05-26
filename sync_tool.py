@@ -182,6 +182,10 @@ def build_ths_ini_context(codes: list[str], markets: dict[str, str]) -> str:
     return ",".join(f"{markets.get(c, guess_market(c))}:{c}" for c in unique_codes(codes)) + ",,"
 
 
+def ths_stock_key(code: str, market: str | None = None) -> str:
+    return f"{market or guess_market(code)}:{normalize_code(code)}"
+
+
 def load_stock_names(paths: list[Path]) -> dict[str, str]:
     key = tuple(sorted(str(path.resolve()) if path.exists() else str(path) for path in paths if path))
     if key in _STOCK_NAME_CACHE:
@@ -282,6 +286,44 @@ def update_ini_value(path: Path, section: str, key: str, value: str, encoding: s
         out.extend([f"[{section}]", f"{key}={value}"])
     elif in_section and not key_written:
         out.append(f"{key}={value}")
+    path.write_text("\n".join(out) + "\n", encoding=encoding)
+
+
+def update_ini_section_values(path: Path, section: str, values: dict[str, str], encoding: str = "gbk") -> None:
+    lines = path.read_text(encoding=encoding, errors="ignore").splitlines()
+    out = []
+    current = ""
+    in_section = False
+    section_found = False
+    written: set[str] = set()
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            if in_section:
+                for key, value in values.items():
+                    if key not in written:
+                        out.append(f"{key}={value}")
+                        written.add(key)
+            current = stripped[1:-1]
+            in_section = current == section
+            section_found = section_found or in_section
+            out.append(line)
+            continue
+        if in_section and "=" in line:
+            key = line.split("=", 1)[0].strip()
+            if key in values:
+                out.append(f"{key}={values[key]}")
+                written.add(key)
+            else:
+                out.append(line)
+        else:
+            out.append(line)
+    if not section_found:
+        out.append(f"[{section}]")
+    if not section_found or in_section:
+        for key, value in values.items():
+            if key not in written:
+                out.append(f"{key}={value}")
     path.write_text("\n".join(out) + "\n", encoding=encoding)
 
 
@@ -487,6 +529,7 @@ class TonghuashunStore:
             backup_file(block.path)
             rows = build_ths_self_stock_rows(block.path, codes, markets)
             block.path.write_text(json.dumps(rows, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+            self.write_self_stock_compat_files(block, codes, markets, mode)
             return
         if not block.path.exists():
             block.path = self.root / block_file_name(block.block_id)
@@ -500,6 +543,30 @@ class TonghuashunStore:
         if self.stock_block_ini.exists():
             backup_file(self.stock_block_ini)
             update_ini_value(self.stock_block_ini, "BLOCK_STOCK_CONTEXT", block.block_id, build_ths_ini_context(codes, {c: market_list[i] for i, c in enumerate(codes)}))
+
+    def write_self_stock_compat_files(self, block: Block, codes: list[str], markets: dict[str, str], mode: str) -> None:
+        code_to_block = self.account_dir / "CodeToBlock.ini"
+        if code_to_block.exists():
+            _, sections = read_ini_sections(code_to_block)
+            belong = dict(sections.get("Belong_To_Block", {}))
+            stock_keys = {ths_stock_key(code, markets.get(code) or block.markets.get(code)) for code in codes}
+            if mode != "append":
+                for key, value in list(belong.items()):
+                    ids = [x for x in value.split(",") if x and x != "21"]
+                    belong[key] = ",".join(ids)
+            for key in stock_keys:
+                ids = [x for x in belong.get(key, "").split(",") if x]
+                if "21" not in ids:
+                    ids.append("21")
+                belong[key] = ",".join(ids)
+            backup_file(code_to_block)
+            update_ini_section_values(code_to_block, "Belong_To_Block", belong)
+
+        hexin_ini = self.account_dir / "同花顺方案" / "hexin.ini"
+        if hexin_ini.exists():
+            backup_file(hexin_ini)
+            date = today()
+            update_ini_value(hexin_ini, "SELF_CODE_ADDTIME", "ADDTIME", "|".join(f"{code}:{date}" for code in codes))
 
 
 def read_varint(data: bytes, i: int) -> tuple[int, int]:

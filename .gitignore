@@ -9,6 +9,9 @@ vendor/
 # Local samples and reverse-engineering inputs
 custom_block/
 自选股同步工具/
+decompiled_zx/
+cfr-*.jar
+zx_synchronizer_*.jar
 SelfStockInfo.json
 StockBlock.ini
 
