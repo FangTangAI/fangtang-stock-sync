@@ -1285,20 +1285,30 @@ class App:
             messagebox.showwarning("请选择板块", "请先在左右两边各选择一个自定义板块。")
             return
         mode = self.mode.get()
+        target_store = None
+        target_block = None
         if direction == "left":
-            self.right_store.write_block(self.right_selected, self.left_selected.codes, self.left_selected.markets, mode)
+            target_store = self.right_store
+            target_block = self.right_selected
+            target_store.write_block(target_block, self.left_selected.codes, self.left_selected.markets, mode)
             clear_runtime_caches()
             target_name = self.right_selected.name
             self.reload_side("right", target_name)
             msg = f"已同步到右侧：{target_name}"
         else:
-            self.left_store.write_block(self.left_selected, self.right_selected.codes, self.right_selected.markets, mode)
+            target_store = self.left_store
+            target_block = self.left_selected
+            target_store.write_block(target_block, self.right_selected.codes, self.right_selected.markets, mode)
             clear_runtime_caches()
             target_name = self.left_selected.name
             self.reload_side("left", target_name)
             msg = f"已同步到左侧：{target_name}"
         self.status.set(msg)
-        messagebox.showinfo("完成", msg + "\n原文件已自动备份到 _sync_backup。")
+        detail = msg + "\n原文件已自动备份到 _sync_backup。"
+        if isinstance(target_store, TonghuashunStore):
+            detail += f"\n\n已写入同花顺本地数据：\n{target_block.path}"
+            detail += "\n\n注意：同花顺云端上传由同花顺客户端负责。外部修改本地文件后，工具无法保证立刻触发同花顺云端同步。"
+        messagebox.showinfo("完成", detail)
 
     def reload_side(self, side: str, select_name: str | None = None):
         if side == "left" and self.left_store:
