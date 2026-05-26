@@ -1185,13 +1185,13 @@ class App:
         dialog.grab_set()
         dialog.resizable(False, False)
         dialog.grid_columnconfigure(0, weight=1)
-        dialog.grid_rowconfigure(2, weight=1)
+        dialog.grid_rowconfigure(2, weight=1, minsize=150)
         ctk.CTkLabel(dialog, text="检测到多个同花顺账号", font=FONT_SECTION, text_color="#111827").grid(row=0, column=0, sticky="ew", padx=18, pady=(18, 4))
-        ctk.CTkLabel(dialog, text="单击选择，双击或点确定确认", font=FONT_NORMAL, text_color="#57606a").grid(row=1, column=0, sticky="ew", padx=18, pady=(0, 10))
+        ctk.CTkLabel(dialog, text="单击选择账号数据路径，双击或点确定确认", font=FONT_NORMAL, text_color="#57606a").grid(row=1, column=0, sticky="ew", padx=18, pady=(0, 10))
         box = Listbox(dialog, height=min(8, len(accounts)), bg="#ffffff", fg="#24292f", selectbackground=COLOR_SELECT, selectforeground=COLOR_SELECT_TEXT, font=FONT_ACCOUNT_LIST, activestyle="none", relief="solid", bd=1, highlightthickness=0)
         box.grid(row=2, column=0, sticky="nsew", padx=14, pady=(0, 12))
         for account in accounts:
-            box.insert(END, account.name or str(account))
+            box.insert(END, f"{account.name or '账号'}    {account}")
         chosen = {"path": None}
         def ok():
             sel = box.curselection()
@@ -1212,7 +1212,7 @@ class App:
             box.selection_set(0)
             box.focus_set()
         dialog.protocol("WM_DELETE_WINDOW", cancel)
-        self.center_dialog(dialog, width=440, height=300)
+        self.center_dialog(dialog, width=720, height=360)
         dialog.wait_window()
         return chosen["path"]
 
