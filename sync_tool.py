@@ -987,7 +987,7 @@ class App:
         ctk.CTkRadioButton(center, text="覆盖式同步", font=FONT_NORMAL, variable=self.mode, value="replace").pack(anchor="w", padx=16, pady=6)
         ctk.CTkButton(center, text="向右同步", font=FONT_NORMAL, height=36, fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER, command=lambda: self.sync("left")).pack(fill=X, padx=14, pady=(22, 8))
         ctk.CTkButton(center, text="向左同步", font=FONT_NORMAL, height=36, fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER, command=lambda: self.sync("right")).pack(fill=X, padx=14, pady=6)
-        ctk.CTkButton(center, text="刷新", font=FONT_NORMAL, height=34, fg_color="#ffffff", text_color="#24292f", border_width=1, border_color="#d0d7de", hover_color="#f3f4f6", command=self.load_all).pack(fill=X, padx=14, pady=(26, 12))
+        ctk.CTkButton(center, text="重新载入数据", font=FONT_NORMAL, height=34, fg_color="#ffffff", text_color="#24292f", border_width=1, border_color="#d0d7de", hover_color="#f3f4f6", command=self.load_all).pack(fill=X, padx=14, pady=(26, 12))
         self.right_box = self.block_panel(middle, "右侧板块", LEFT)
         bottom = ctk.CTkFrame(shell, fg_color="#ffffff", corner_radius=10, border_width=1, border_color="#d0d7de")
         bottom.pack(fill=X)
@@ -1076,11 +1076,22 @@ class App:
             self.status.set("右侧路径已选择，请点击载入")
 
     def load_all(self):
-        if self.left_path.get().strip():
+        refreshed = False
+        if self.left_store:
+            self.reload_side("left", self.left_selected.name if self.left_selected else None)
+            refreshed = True
+        elif self.left_path.get().strip():
             self.load_left()
-        if self.right_path.get().strip():
+            refreshed = True
+        if self.right_store:
+            self.reload_side("right", self.right_selected.name if self.right_selected else None)
+            refreshed = True
+        elif self.right_path.get().strip():
             self.load_right()
-        if not self.left_path.get().strip() and not self.right_path.get().strip():
+            refreshed = True
+        if refreshed:
+            self.status.set("已重新载入当前数据")
+        else:
             self.status.set("请选择左右两侧程序后载入")
 
     def load_left(self):
@@ -1173,10 +1184,12 @@ class App:
         dialog.transient(self.root)
         dialog.grab_set()
         dialog.resizable(False, False)
-        ctk.CTkLabel(dialog, text="检测到多个同花顺账号", font=FONT_SECTION, text_color="#111827").pack(fill=X, padx=18, pady=(18, 4))
-        ctk.CTkLabel(dialog, text="单击选择，双击或点确定确认", font=FONT_NORMAL, text_color="#57606a").pack(fill=X, padx=18, pady=(0, 10))
+        dialog.grid_columnconfigure(0, weight=1)
+        dialog.grid_rowconfigure(2, weight=1)
+        ctk.CTkLabel(dialog, text="检测到多个同花顺账号", font=FONT_SECTION, text_color="#111827").grid(row=0, column=0, sticky="ew", padx=18, pady=(18, 4))
+        ctk.CTkLabel(dialog, text="单击选择，双击或点确定确认", font=FONT_NORMAL, text_color="#57606a").grid(row=1, column=0, sticky="ew", padx=18, pady=(0, 10))
         box = Listbox(dialog, height=min(8, len(accounts)), bg="#ffffff", fg="#24292f", selectbackground=COLOR_SELECT, selectforeground=COLOR_SELECT_TEXT, font=FONT_ACCOUNT_LIST, activestyle="none", relief="solid", bd=1, highlightthickness=0)
-        box.pack(fill=BOTH, expand=True, padx=14, pady=6)
+        box.grid(row=2, column=0, sticky="nsew", padx=14, pady=(0, 12))
         for account in accounts:
             box.insert(END, account.name or str(account))
         chosen = {"path": None}
@@ -1191,9 +1204,10 @@ class App:
         box.bind("<Double-Button-1>", lambda _event: ok())
         box.bind("<Return>", lambda _event: ok())
         button_row = ctk.CTkFrame(dialog, fg_color="transparent")
-        button_row.pack(fill=X, padx=14, pady=(8, 14))
-        ctk.CTkButton(button_row, text="取消", font=FONT_NORMAL, height=34, fg_color="#ffffff", text_color="#24292f", border_width=1, border_color="#d0d7de", hover_color="#f3f4f6", command=cancel).pack(side=LEFT, fill=X, expand=True, padx=(0, 6))
-        ctk.CTkButton(button_row, text="确定", font=FONT_NORMAL, height=34, fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER, command=ok).pack(side=LEFT, fill=X, expand=True, padx=(6, 0))
+        button_row.grid(row=3, column=0, sticky="ew", padx=14, pady=(0, 16))
+        button_row.grid_columnconfigure((0, 1), weight=1)
+        ctk.CTkButton(button_row, text="取消", font=FONT_NORMAL, height=42, fg_color="#ffffff", text_color="#24292f", border_width=1, border_color="#d0d7de", hover_color="#f3f4f6", command=cancel).grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        ctk.CTkButton(button_row, text="确定", font=FONT_NORMAL, height=42, fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER, command=ok).grid(row=0, column=1, sticky="ew", padx=(8, 0))
         if accounts:
             box.selection_set(0)
             box.focus_set()
