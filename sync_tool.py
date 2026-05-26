@@ -941,18 +941,24 @@ class TdxStore:
 
     def list_blocks(self) -> list[Block]:
         blocks: list[Block] = []
-        system_blocks = {"FGBK", "GNBK", "HYBK", "HXGG"}
-        for path in sorted(self.root.glob("*.blk"), key=lambda x: (x.stem.lower() != "zxg", x.stem.lower())):
-            if path.parent.name.lower() == "lastsync":
+        zxg_path = self.root / "zxg.blk"
+        if zxg_path.exists():
+            codes, markets = self.read_codes(zxg_path)
+            blocks.append(Block("ZXG", "通达信自选股", zxg_path, codes, markets))
+        if self.block_names:
+            for stem, name in self.block_names.items():
+                path = self.root / f"{stem}.blk"
+                if not path.exists():
+                    continue
+                codes, markets = self.read_codes(path)
+                blocks.append(Block(stem, name, path, codes, markets))
+            return blocks
+        for path in sorted(self.root.glob("*.blk"), key=lambda x: x.stem.lower()):
+            stem = path.stem.upper()
+            if stem == "ZXG" or stem.startswith("ZBSJ") or stem in {"TJ", "TJG"}:
                 continue
             codes, markets = self.read_codes(path)
-            stem = path.stem.upper()
-            if stem in system_blocks:
-                continue
-            if stem == "ZXG":
-                name = "通达信自选股"
-            else:
-                name = self.block_names.get(stem, path.stem)
+            name = path.stem
             blocks.append(Block(stem, name, path, codes, markets))
         return blocks
 
