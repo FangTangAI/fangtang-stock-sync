@@ -136,7 +136,7 @@ def saved_user_path(value: str) -> str:
     if not value:
         return ""
     name = Path(value).name.lower()
-    if name in {"selfmess", "blocknew"}:
+    if name in {"custom_block", "selfmess", "blocknew"}:
         return ""
     if value in {str(DEFAULT_THS_INSTALL_DIR), str(DEFAULT_WH_INSTALL_DIR), str(DEFAULT_TDX_INSTALL_DIR)}:
         return ""
@@ -947,6 +947,8 @@ class App:
         self.right_blocks: list[Block] = []
         self.left_selected = None
         self.right_selected = None
+        self.left_resolved_path = ""
+        self.right_resolved_path = ""
         self.stock_names: dict[str, str] = {}
         self.build()
         self.status.set("请选择左右两侧程序后载入")
@@ -1013,6 +1015,7 @@ class App:
         if side == "left":
             if clear_path:
                 self.left_path.set("")
+            self.left_resolved_path = ""
             self.left_store = None
             self.left_blocks = []
             self.left_selected = None
@@ -1020,6 +1023,7 @@ class App:
         else:
             if clear_path:
                 self.right_path.set("")
+            self.right_resolved_path = ""
             self.right_store = None
             self.right_blocks = []
             self.right_selected = None
@@ -1133,9 +1137,9 @@ class App:
             return None
         if kind == "同花顺":
             if side == "left":
-                self.left_path.set(str(path))
+                self.left_resolved_path = str(path)
             else:
-                self.right_path.set(str(path))
+                self.right_resolved_path = str(path)
         if kind == "同花顺":
             return TonghuashunStore(path)
         if kind == "文华财经":
