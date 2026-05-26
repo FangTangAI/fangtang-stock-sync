@@ -1204,7 +1204,7 @@ class App:
         box.bind("<Double-Button-1>", lambda _event: ok())
         box.bind("<Return>", lambda _event: ok())
         button_row = ctk.CTkFrame(dialog, fg_color="transparent")
-        button_row.grid(row=3, column=0, sticky="ew", padx=14, pady=(0, 16))
+        button_row.grid(row=3, column=0, sticky="ew", padx=14, pady=(0, 22))
         button_row.grid_columnconfigure((0, 1), weight=1)
         ctk.CTkButton(button_row, text="取消", font=FONT_NORMAL, height=42, fg_color="#ffffff", text_color="#24292f", border_width=1, border_color="#d0d7de", hover_color="#f3f4f6", command=cancel).grid(row=0, column=0, sticky="ew", padx=(0, 8))
         ctk.CTkButton(button_row, text="确定", font=FONT_NORMAL, height=42, fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER, command=ok).grid(row=0, column=1, sticky="ew", padx=(8, 0))
@@ -1212,7 +1212,7 @@ class App:
             box.selection_set(0)
             box.focus_set()
         dialog.protocol("WM_DELETE_WINDOW", cancel)
-        self.center_dialog(dialog, width=720, height=360)
+        self.center_dialog(dialog, width=720, height=430)
         dialog.wait_window()
         return chosen["path"]
 
