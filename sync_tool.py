@@ -27,6 +27,7 @@ FONT_NORMAL = (FONT_FAMILY, 12)
 FONT_SMALL = (FONT_FAMILY, 10)
 FONT_TABLE = (FONT_FAMILY, 17)
 FONT_TABLE_HEAD = (FONT_FAMILY, 17, "bold")
+FONT_ACCOUNT_LIST = (FONT_FAMILY, 15)
 FONT_MONO = ("Consolas", 12)
 DEFAULT_WH_DIR = Path(r"C:\Users\pengy\Desktop\wh7个性化设置\PageBak\Page\SelfMess")
 DEFAULT_WH_INSTALL_DIR = Path(r"C:\Software\wh6模拟版")
@@ -1089,8 +1090,11 @@ class App:
             return
         self.left_store = store
         self.left_blocks = self.left_store.list_blocks()
+        self.left_selected = None
+        self.left_box["stocks"].delete(*self.left_box["stocks"].get_children())
         self.refresh_stock_names()
         self.fill_blocks(self.left_box["blocks"], self.left_blocks)
+        self.show_selected_block(self.left_box)
         self.persist_state()
 
     def load_right(self):
@@ -1100,8 +1104,11 @@ class App:
             return
         self.right_store = store
         self.right_blocks = self.right_store.list_blocks()
+        self.right_selected = None
+        self.right_box["stocks"].delete(*self.right_box["stocks"].get_children())
         self.refresh_stock_names()
         self.fill_blocks(self.right_box["blocks"], self.right_blocks)
+        self.show_selected_block(self.right_box)
         self.persist_state()
 
     def create_store(self, kind: str, raw_path: str, side: str):
@@ -1168,7 +1175,7 @@ class App:
         dialog.resizable(False, False)
         ctk.CTkLabel(dialog, text="检测到多个同花顺账号", font=FONT_SECTION, text_color="#111827").pack(fill=X, padx=18, pady=(18, 4))
         ctk.CTkLabel(dialog, text="单击选择，双击或点确定确认", font=FONT_NORMAL, text_color="#57606a").pack(fill=X, padx=18, pady=(0, 10))
-        box = Listbox(dialog, height=min(8, len(accounts)), bg="#ffffff", fg="#24292f", selectbackground=COLOR_SELECT, selectforeground=COLOR_SELECT_TEXT, font=FONT_NORMAL, activestyle="none", relief="solid", bd=1, highlightthickness=0)
+        box = Listbox(dialog, height=min(8, len(accounts)), bg="#ffffff", fg="#24292f", selectbackground=COLOR_SELECT, selectforeground=COLOR_SELECT_TEXT, font=FONT_ACCOUNT_LIST, activestyle="none", relief="solid", bd=1, highlightthickness=0)
         box.pack(fill=BOTH, expand=True, padx=14, pady=6)
         for account in accounts:
             box.insert(END, account.name or str(account))
@@ -1191,7 +1198,7 @@ class App:
             box.selection_set(0)
             box.focus_set()
         dialog.protocol("WM_DELETE_WINDOW", cancel)
-        self.center_dialog(dialog, width=360, height=260)
+        self.center_dialog(dialog, width=440, height=300)
         dialog.wait_window()
         return chosen["path"]
 
@@ -1236,12 +1243,17 @@ class App:
             tree.selection_set(str(idx))
             tree.focus(str(idx))
 
+    def show_selected_block(self, box):
+        self.show_block(box["blocks"], box["stocks"])
+
     def show_block(self, block_tree, stock_tree):
         side_blocks = self.left_blocks if block_tree is self.left_box["blocks"] else self.right_blocks
         sel = block_tree.selection()
         if not sel:
             return
         idx = int(sel[0])
+        if idx < 0 or idx >= len(side_blocks):
+            return
         block = side_blocks[idx]
         if block_tree is self.left_box["blocks"]:
             self.left_selected = block
@@ -1274,12 +1286,18 @@ class App:
     def reload_side(self, side: str, select_name: str | None = None):
         if side == "left" and self.left_store:
             self.left_blocks = self.left_store.list_blocks()
+            self.left_selected = None
+            self.left_box["stocks"].delete(*self.left_box["stocks"].get_children())
             self.refresh_stock_names()
             self.fill_blocks(self.left_box["blocks"], self.left_blocks, select_name)
+            self.show_selected_block(self.left_box)
         elif side == "right" and self.right_store:
             self.right_blocks = self.right_store.list_blocks()
+            self.right_selected = None
+            self.right_box["stocks"].delete(*self.right_box["stocks"].get_children())
             self.refresh_stock_names()
             self.fill_blocks(self.right_box["blocks"], self.right_blocks, select_name)
+            self.show_selected_block(self.right_box)
 
 
 if __name__ == "__main__":
